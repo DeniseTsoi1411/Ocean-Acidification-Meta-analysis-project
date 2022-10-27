@@ -26,8 +26,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(readr)
 library(tidyverse)
-OA_data <- read_csv("./data/Assignment2/OA_activitydat_20190302_BIOL3207.csv")
-clark_data <- read_csv("./data/Assignment2/clark_paper_data.csv")
+OA_data <- read_csv("./OA_activitydat_20190302_BIOL3207.csv")
+clark_data <- read_csv("./clark_paper_data.csv")
 OA_summary <- OA_data %>% group_by(species, treatment) %>%
               summarise(mean = mean(activity, na.rm = TRUE),
                         sd = sd(activity, na.rm = TRUE),
@@ -45,7 +45,7 @@ OA_clark1 <- pivot_wider(OA_clark, names_from = treatment,
 
 ### 3. Through coding, correctly merge the combined summary statistics and metadata from Clark et al. (2020) (output from 1 & 2) into the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
 ```{r}
-ocean_meta <- read_csv("./data/Assignment2/ocean_meta_data.csv")
+ocean_meta <- read_csv("./ocean_meta_data.csv")
 
 ## Renaming some columns so that they match with ocean_meta
 OA_clark2 <- OA_clark1 %>% rename("oa.mean" = CO2_mean,
@@ -80,15 +80,23 @@ rom <- metafor::escalc(measure = "ROM",
                         var.names = c("ROM", "ROM_V"))
 rom <- mutate(rom, residual = 1:n()) # Added a column for observations / residuals 
 
-plot(rom1$residual, rom1$ROM_V) # Observed outliers in ROM_V, deleted them for further analysis
-which(rom$ROM_V > 300) # Set preliminary ylim to 300 to find outliers
-rom[c(163, 220, 673),24] # These observations have values: 21969.18, 143043506.14 and 6642701.26
-rom1 <- rom[-c(163, 220, 673),] # Made new variable with deleted outliers
+plot(rom$residual, rom$ROM_V) # Observed outliers in ROM_V, deleted them for further analysis
+which(rom$ROM_V > 300) # To find unusually large ROM_V values
+which(rom$ROM_V < 0.0001) # To find unusually small ROM_V values
+rom1 <- rom[-c(163, 220, 673, 6, 16, 17, 255, 497, 562, 564),] # Made new variable with deleted outliers
 ```
+Note: Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673. It is possible that the ratio between the mean and standard deviation values are quite disproportionate compared to the other observations, resulting in larger values. 
+
+Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values in e-05. While assessing the relevant columns, it was found that the standard deviation values may be improperly labelled. Both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic to standard deviation because it explains the distance between a certain value with the mean. Thus, the standard deviation column is likely to be mislabeled, and should be representing standard error instead. 
+
+The outliers will be deleted for subsequent analysis.
+
+Lastly, some "ROM" and "ROM_V" values are "NA". This occurs when there is negative "oa.mean" values, but positive "ctrl.mean" values. 
+
 
 ### 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s rma.mv() function.
 ```{r}
-MLMA <- metafor:: rma.mv(ROM ~ ROM_V , V = ROM_V,
+MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
                          method = "REML",
                          random=list(~1 | Study,
                                      ~1 | Species,
@@ -96,15 +104,15 @@ MLMA <- metafor:: rma.mv(ROM ~ ROM_V , V = ROM_V,
                          test = "t", dfs = "contain", 
                          data = rom1)
 ```
-(Look at meta-analysis-student.Rmd row 205 for notes)
 
 ### 6. Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
   + Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
   + Measures of heterogeneity in effect size estimates across studies (i.e., I2 and/or prediction intervals - see predict() function in metafor)
   + Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
-```{r eval=F, echo=T}
+```{r}
 summary(MLMA) # To get intercept and 95% Confidence intervals
-predict(MLMA) # To get 95% Prediction interval
+pi_val <- predict(MLMA) 
+pi_val # To get 95% Prediction interval
 I2_val <-  orchaRd::i2_ml(MLMA) 
 I2_val # Shows dissection of variation in effects within and across studies
 
@@ -116,66 +124,38 @@ MLMR <-  metafor:: rma.mv(ROM ~ Climate..FishBase., V = ROM_V,
                                       ~1 | residual),
                           test = "t", dfs = "contain", 
                           data = rom1)
+```
 
+```{r orchard1, fig.align='center', fig.cap="Figure 1: Orchard plot with Log repsonse ratio (lnRR) as effect size for Ocean acidification and fish behaviour in relations to Climate conditions. k = Effect size, Number of studies in brackets, scaled to precision of each effect size value (1/ROM_V)" }
 orchaRd::orchard_plot(MLMR, mod = "Climate..FishBase.", group = "Study", data = rom, xlab = "Log response ratio effect size (lnRR)", angle = 45) +
   annotate(geom = "text", x = 1, y = -10, 
            label = paste0("italic(I)^{2} == ",round(I2_val[1], 2)), 
            color = "black", parse = TRUE, size = 5) + 
-  annotate(geom = "text", x = 0.95, y = -7.8, label = "%", color = "black", parse = FALSE, size = 5) 
+  annotate(geom = "text", x = 0.95, y = -7, label = "%", color = "black", parse = FALSE, size = 5) 
 ```
-The intercept was found to be -0.0563. This reflects the overall estimate of the effect from all experiments published in the literature. In other words, it combines the meta-analytic mean effect sizes across all studies. Thus, the intercept infers that there is a weak negative correlation between elevation of CO2 levels and fish behavior across all studies. 
+The intercept was found to be -0.0629. This reflects the overall estimate of the effect from all experiments published in the literature. In other words, it combines the meta-analytic mean effect sizes across all studies. Thus, the intercept infers that there is a weak negative correlation between elevation of CO2 levels and fish behavior across all studies. 
 
-The resultant 95% confidence and prediction intervals are -0.3041 to 0.1916 and -4.2487 to 4.1361, respectively. While 95% of the time we can be confident the true mean would fall between LnRR values of -0.3041 to 0.1916, we also expect effect sizes to range from -4.2487 to 4.1361 with 95% of repeated experiments. Such a broad prediction interval is indicative of high inconsistency between studies. 
+The resultant 95% confidence and prediction intervals are -0.3127 to 0.1868 and -4.2762 to 4.1503, respectively. While 95% of the time we can be confident the true mean would fall between LnRR values of -0.3127 to 0.1868, we also expect effect sizes to range from -4.2762 to 4.1503 with 95% of repeated experiments. Such a broad prediction interval is indicative of high inconsistency between studies. 
 
-Aside from prediction intervals, we can also deduce levels of heterogeneity through I2. I2 represents the allocation of variation from within and across studies into "Total" and the aforementioned random effects. Evidently, we observe complete heterogeneous effect size because sampling variance contributes 0% (100% - I(total)^2) of total variation in effect size. Likewise, we observe 5.60% of total effect size variation due to differences in studies, 4.87% due to differences in species, and 89.53% due to residual effects. 
+Aside from prediction intervals, we can also deduce levels of heterogeneity through I2. I2 represents the allocation of variation from within and across studies into "Total" and the aforementioned random effects. Evidently, we observe complete heterogeneous effect size because sampling variance contributes 0.1% (100% - I(total)^2) of total variation in effect size. Likewise, we observe 5.69% of total effect size variation due to differences in studies, 5.08% due to differences in species, and 89.11% due to residual effects. 
 
-The MLMR model and Orchard plot relates the effect sizes with the climate, evaluating whether lnRR value changes depending on the climate conditions. Thus, the intercept of MLMR explains the relationship between CO2 levels and fish behavior in correspondence with climate. As indicated on the Orchard plot as well, we observe majority of points with very low precision, with 95% confidence interval intersecting x=0, suggesting no effect. 
+The MLMR model and Orchard plot relates the effect sizes with the climate, evaluating whether lnRR value changes depending on the climate conditions. Thus, the intercept of MLMR explains the relationship between CO2 levels and fish behavior in correspondence with climate. As indicated on the Orchard plot as well, we observe majority of points with very low precision, with 95% confidence interval intersecting x=0 (Thick black line), suggesting no effect. The 95% prediction interval (Thin black line) reflects the high heterogeneity (99.89%), with "k" showing the effect size and values in bracket shows sample size for that climate group.
 
 ### 7. Funnel plot for visually assessing the possibility of publication bias.
-```{r}
-par(oma = c(3,3,3,3))
+```{r funnel1, fig.align='center', fig.cap= "Figure 2: Funnel plot showing correlation between Ocean acidification and fish behaviour depending on the precision (1/SE). Dotted lines show theoretical 95% sampling variance intervals (Where we would expect effect size values to fall). Pink and grey shaded regions shows significance of p-values: Grey shows non-significance, while pinks approaching lighter shades have p-values of 0.01 to 0.05, 0.05 to 0.1, and 0.1 to 1.0, respectively."}
 metafor::funnel(x = rom1$ROM, vi = rom1$ROM_V, 
                 yaxis = "seinv", digits = 2, 
                 level = c(0.1, 0.05, 0.01), 
-                shade = c("white", "gray55", "gray 75"), las = 1, 
-                xlab = "Correlation Coefficient (r)", legend = TRUE)
-
-library(ggplot2)
-ggplot(rom, aes(x=tanh(ROM), y = 1/sqrt(ROM_V))) + geom_point(aes(colour = Year..online.), alpha=0.5) + geom_vline(aes(xintercept = 0)) +
-    labs(y = "Precision (1/SE)", x = "Correlation Coefficient (r)") + theme_bw()
-  # No publication bias exists -> fairly symmetrical and funnel shaped
-    # Sampling variance expected to decrease (or the precision increase) when the sample size, and thus power, increases.
-
-yaxis="vi" for the sampling variances,
-
-yaxis="seinv" for the inverse of the standard errors,
-
-yaxis="vinv" for the inverse of the sampling variances,
-
-yaxis="ni" for the sample sizes,
-
-yaxis="ninv" for the inverse of the sample sizes,
-
-yaxis="sqrtni" for the square root of the sample sizes,
-
-yaxis="sqrtninv" for the inverse square root of the sample sizes,
-
-yaxis="lni" for the log of the sample sizes,
-
-yaxis="wi" for the weights.
+                shade = c("lightpink", "lightcoral", "indianred2"), las = 1, 
+                xlab = "Log response ratio (lnRR)", legend = TRUE)
 ```
 
 ### 8. Time-lag plot assessing how effect sizes may or may not have changed through time
-```{r}
-ggplot(rom1, aes(y = ROM, x = Year..online., size = 1/sqrt(ROM_V))) + geom_point(alpha = 0.3) +
-    geom_smooth(method = lm, col = "red", show.legend = FALSE) + labs(x = "Publication Year",
+```{r timelag1, fig.align='center', fig.cap= "Figure 3: Time lag plot to assess Log response ratio against the year it became online. Point sizes are scaled depending on precision (1/ROM_V), with smaller points indicating lower precision and high sample variance."}
+ggplot(rom1, aes(y = ROM, x = Year..online., size = 1/ROM_V)) + geom_point(alpha = 0.3) +
+    geom_smooth(method = lm, col = "red", show.legend = FALSE) + labs(x = "Year online",
     y = "Log response ratio (lnRR)", size = "Precision (1/SE)") +
     theme_classic()
-  # Small points = Effects with low precision or high sampling varaince
-  # smoothing line does not increase much and stays around 0
-    # Weak positive relationship between lnRR effect size and year
-    # Consistently have low precision and high sampling variance throughout the years
-    # Early publications have much lower effect size, while have some outliers (high) around 2014
 ```
 
 ### 9. Formal meta-regression model that includes year as a moderator (fixed effect) to test for time-lag bias
@@ -187,28 +167,44 @@ MLMR1 <-  metafor:: rma.mv(ROM ~ Year..online., V = ROM_V,
                                       ~1 | residual),
                           test = "t", dfs = "contain", 
                           data = rom1)
+summary(MLMR1)
 r2_1 <- orchaRd::r2_ml(MLMR1)
-     # R2_marginal R2_conditional 
-     #    0.0195         0.1068
-    # Time-lag explains 1.95% of the variation in lnRR
+r2_1
 ```
 
 ### 10. Formal meta-regression model that includes inverse sampling var (i.e., 1vlnRR) to test for file-drawer biases
 ```{r}
-rom <- rom %>% mutate("1vlnRR" = 1/(ROM_V))
-MLMR2 <-  metafor:: rma.mv(ROM ~ Year..online. + `1vlnRR`, V = ROM_V,
+rom1 <- rom1 %>% mutate(inv_lnRR = 1/(ROM_V))
+MLMR2 <-  metafor:: rma.mv(ROM ~ Year..online. + inv_lnRR, V = ROM_V,
                           method = "REML",
                           random=list(~1 | Study,
                                       ~1 | Species,
                                       ~1 | residual),
                           test = "t", dfs = "contain", 
-                          data = rom)
+                          data = rom1)
+summary(MLMR2)
 r2_2 <- orchaRd::r2_ml(MLMR2)
-rom$`1vlnRR`
+r2_2
 ```
 
-11. A written paragraph that discusses the potential for publication bias based on the meta-regression results. What type of publication bias, if any, appears to be present in the data? If publication bias is present, what does it mean and what might be contributing to such bias?
-12. Identify any studies contributing to publication bias. How do your updated meta-analysis results compare with a meta-analysis by Clement et. al. (2022)? Are there any concerns about these studies? If so, describe using references to existing papers what concerns have been raised?
+### 11. A written paragraph that discusses the potential for publication bias based on the meta-regression results. What type of publication bias, if any, appears to be present in the data? If publication bias is present, what does it mean and what might be contributing to such bias?
+
+Overall, there is limited presence of publication biases shown in the meta-regression results. 
+
+Firstly, Funnel plots helps to expose presence of publication bias within the dataset. As seen in figure 2, there are more studies with lower precision (1/SE) on the negative end of the lnRR spectrum, while the number of higher lnRR values increase as precision increases. This display can be indicative of no file-drawer bias present, as we would expect studies with low precision to be stashed away, hence would observe less studies with negative lnRR with low precision. 
+
+However, pink and grey areas in the graph indicates areas of significance, where sampling variance does affect the effect size. With no pink area visible, it can be deduced that none of the studies shows findings with significant p-values, therefore there is no significant correlation between Ocean acidification and Fish behaviour.
+
+Secondly, time-lag plot shows the evolution of studies' precision and effect size over time. In other words, studies with negative effects tends to take longer to publish than positive ones. Figure 3 shows a weak positive relationship between lnRR and time through the red LOWESS curve, thus weak presence of time-lag bias. Early on, there were many studies with small precision and lnRR values. This could indicate many low quality data due to large sample error or small sample size. As time passes, more low precision studies have moderately increased lnRR values. There is also an increased occurrence of higher precision studies. With less studies converging away from the red line as time passes, we can assume that recent studies have been more closely able to describe the relationship with Ocean acidification and fish behaviour.
+
+Similarly, MLMR1 model has the year online as a moderator, which categorises the variation of effect size depending on the year. In this case, "R2_marginal" is 0.022, indicating that the time-lag explains 2.21% of the variation in lnRR among studies over time. The lack of time lag is observed in figure 3 as well, with studies with low lnRR decreases over time. 
+
+Lastly, MLMR2 conceptualises the presence of both time-lag and file-drawer bias due to moderators being both year online and inverse of lnRR variance. The "R2_marginal" for MLMR2 is 0.027, indicating that both file-drawer and time-lag accounts for 2.74% of variation in lnRR.  
+
+Note that the intercept for MLMR1 and MLMR2 is -224.2863 and -236.3304, respectively. With the difference of both models dependent on the presence of inverse lnRR variance, we can assume that the differences in the intercepts accounts for the the amount of variation explained by the inverse effect size variance, which is 12.0441. 
+
+
+### 12. Identify any studies contributing to publication bias. How do your updated meta-analysis results compare with a meta-analysis by Clement et. al. (2022)? Are there any concerns about these studies? If so, describe using references to existing papers what concerns have been raised?
 
 Reproducibility (30%):
 1. Code, analysis and data is setup in a public GitHub Repository
@@ -217,9 +213,6 @@ Reproducibility (30%):
   + Rmarkdown document rendered as an html!
   + Use Figure and Table code chunks that are referenced in text.
   + Writing of findings is done using inline code chunks with reference to specific object values.
-```{r}
-
-```
 
   
 Coding, Writing Structure & Presentation (20%):
@@ -227,68 +220,3 @@ Coding, Writing Structure & Presentation (20%):
 2. Figure and Tables have clear and well labelled captions that are informative and correctly referenced within the document.
 3. Sentences are clear and understandable.
 
-Glossary
-```{r}
-OA_data <- read_csv("./data/Assignment2/OA_activitydat_20190302_BIOL3207.csv")
-OA_summary <- OA_data %>% group_by(species, treatment) %>%
-    summarise(Mean = mean(activity, na.rm = TRUE),
-              SD = sd(activity, na.rm = TRUE),
-              N = length(unique(animal_id))) %>%
-  rename(Species = "species")
-
-# 2. Merge summary stats of (1) with clark_paper_data.csv
-clark_data<- read_csv("./data/Assignment2/clark_paper_data.csv")
-OA_clark <- cbind(clark_data, OA_summary)
-
-#3. Merge output from 2 into a larger meta-analysis dataset (i.e., ocean_meta_data.csv)
-ocean_meta <- read.csv("./data/Assignment2/ocean_meta_data.csv")
-OA_clark1 <- pivot_wider(OA_clark, names_from = treatment,
-                     names_glue = "{treatment}_{.value}",
-                     values_from = c("Mean", "SD", "N"))
-
-# Reorder col names based on names in meta_data_full
-library(dplyr)
-OA_clark2 <- OA_clark1 %>% relocate(Species, .after = "Effect type")
-names(ocean_meta) <- names(OA_clark2)
-
-# Check columns are in same order
-colnames(ocean_meta) == colnames(OA_clark2) # Returns all TRUE
-
-# Bind the two dataframes
-final <- rbind(ocean_meta, OA_clark2)
-OA_clark1 <-  mutate(OA_clark, ctrl.n = case_when(treatment == "control" ~ N),
-                     OA_clark, ctrl.mean = case_when(treatment == "control" ~ Mean),
-                     OA_clark, ctrl.sd = case_when(treatment == "control" ~ SD),
-                     OA_clark, oa.n = case_when(treatment == "CO2" ~ N),
-                     OA_clark, oa.mean = case_when(treatment == "CO2" ~ Mean),
-                     OA_clark, oa.sd = case_when(treatment == "CO2" ~ SD))
-OA_clark1 <- OA_clark1[,-c(17:20)] # Got rid of columns that do not align with ocean_meta_data
-
-## Used a function to realign the variables for last couple columns
-shift <- function(x, n){
-  c(x[-(seq(n))], rep(NA, n))}
-
-OA_clark1[,17] <- shift(OA_clark1[,17], 1)
-OA_clark1[,18] <- shift(OA_clark1[,18], 1)
-OA_clark1[,19] <- shift(OA_clark1[,19], 1)
-
-## Got rid of NAs
-OA_clark1 <- OA_clark1[complete.cases(OA_clark1[ , c(17:22)]),]
-
-## Do some renaming of colnames so they match ocean_meta
-OA_clark2 <- OA_clark1 %>% rename (CO2_mean = oa.mean,
-                                   CO2_sd = oa.sd,
-                                   CO2_n = oa.n,
-                                   Control_mean = ctrl.mean,
-                                   Control_sd = ctrl.sd,
-                                   Control_n = ctrl.n)
-
-# Reorder col names based on names in meta_data_full
-ocean_meta$Species # = pos11
-OA_clark2$species # = pos 16
-library(dplyr)
-OA_clark2 %>% relocate(species, .after = "Effect type")
-
-
-
-```
