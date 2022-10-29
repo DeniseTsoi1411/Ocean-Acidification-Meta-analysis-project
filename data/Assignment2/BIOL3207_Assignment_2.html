@@ -368,15 +368,6 @@ pre code {
 </div>
 
 
-<p>Notes for assignments</p>
-<pre class="r"><code>Notes:
-  - Meta-analysis on ocen acidification effects on behaviour
-  - On 5-6 reef fish -&gt; Elevated CO2 + assess fish behaviour
-    - Did not find strong evidence that increased acification had effects on behaviour
-Findings:
-  - Estimate overall effect of ocean acidification on behaviour and determine if these effects are general across studies conducting similar experiments;
-  - Understand how variable the effect size is within the literature
-  - What factors (biological, methodological, publication practices) explain variation in effect size</code></pre>
 <p>Link to repository: <a href="https://github.com/DeniseTsoi/3207_Assignment2" class="uri">https://github.com/DeniseTsoi/3207_Assignment2</a></p>
 <div id="statistical-analysis-and-interpretation-50" class="section level2">
 <h2><strong>(1) Statistical Analysis and Interpretation
@@ -653,11 +644,6 @@ approaching lighter shades have p-values of 0.01 to 0.05, 0.05 to 0.1,
 and 0.1 to 1.0, respectively.
 </p>
 </div>
-<pre class="r"><code># Even with bright colours to highlight the area of p-values, it is unobservable. This could indicate that none of the studies show significant p-values. Thus, there is no relationship between ocean acidification and fish behaviour
-# Funnel plot not exactly symmetrical with larger range in lnRR with lower inverse standard error values.
-
-  # No publication bias exists -&gt; fairly symmetrical and funnel shaped
-    # Sampling variance expected to decrease (or the precision increase) when the sample size, and thus power, increases.</code></pre>
 </div>
 <div id="time-lag-plot-assessing-how-effect-sizes-may-or-may-not-have-changed-through-time" class="section level3">
 <h3>8. Time-lag plot assessing how effect sizes may or may not have
@@ -677,16 +663,12 @@ became online. Point sizes are scaled depending on precision (1/ROM_V),
 with smaller points indicating lower precision and high sample variance.
 </p>
 </div>
-<pre class="r"><code>  # Small points = Effects with low precision or high sampling varaince
-  # smoothing line does not increase much and stays around 0
-    # Weak positive relationship between lnRR effect size and year
-    # Consistently have low precision and high sampling variance throughout the years
-    # Early publications have many low effect size, while have some outliers (high) around 2014</code></pre>
 </div>
 <div id="formal-meta-regression-model-that-includes-year-as-a-moderator-fixed-effect-to-test-for-time-lag-bias" class="section level3">
 <h3>9. Formal meta-regression model that includes year as a moderator
 (fixed effect) to test for time-lag bias</h3>
-<pre class="r"><code>MLMR1 &lt;-  metafor:: rma.mv(ROM ~ Year..online., V = ROM_V,
+<pre class="r"><code>rom1 &lt;- rom1 %&gt;% mutate(Year_c = Year..online. - mean(Year..online.)) 
+MLMR1 &lt;-  metafor:: rma.mv(ROM ~ Year_c, V = ROM_V,
                           method = &quot;REML&quot;,
                           random=list(~1 | Study,
                                       ~1 | Species,
@@ -694,19 +676,44 @@ with smaller points indicating lower precision and high sample variance.
                           test = &quot;t&quot;, dfs = &quot;contain&quot;, 
                           data = rom1)</code></pre>
 <pre><code>## Warning: Rows with NAs omitted from model fitting.</code></pre>
+<pre class="r"><code>summary(MLMR1)</code></pre>
+<pre><code>## 
+## Multivariate Meta-Analysis Model (k = 791; method: REML)
+## 
+##     logLik    Deviance         AIC         BIC        AICc   
+## -1745.6063   3491.2126   3501.2126   3524.5664   3501.2892   
+## 
+## Variance Components:
+## 
+##             estim    sqrt  nlvls  fixed    factor 
+## sigma^2.1  0.1775  0.4213     92     no     Study 
+## sigma^2.2  0.2196  0.4686     62     no   Species 
+## sigma^2.3  3.9549  1.9887    791     no  residual 
+## 
+## Test for Residual Heterogeneity:
+## QE(df = 789) = 73168.4145, p-val &lt; .0001
+## 
+## Test of Moderators (coefficient 2):
+## F(df1 = 1, df2 = 90) = 7.9701, p-val = 0.0059
+## 
+## Model Results:
+## 
+##          estimate      se     tval  df    pval    ci.lb   ci.ub     
+## intrcpt   -0.1131  0.1209  -0.9353  60  0.3534  -0.3549  0.1288     
+## Year_c     0.1115  0.0395   2.8231  90  0.0059   0.0330  0.1900  ** 
+## 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <pre class="r"><code>r2_1 &lt;- orchaRd::r2_ml(MLMR1)
 r2_1</code></pre>
 <pre><code>##    R2_marginal R2_conditional 
-##     0.02213319     0.11135920</code></pre>
-<pre class="r"><code># R2_marginal R2_conditional 
-#  0.02213319     0.11135920 
-    # Time-lag explains 2.21% of the variation in lnRR -&gt; Quite small, can assume there is no time-lag</code></pre>
+##     0.02213319     0.11135919</code></pre>
 </div>
 <div id="formal-meta-regression-model-that-includes-inverse-sampling-var-i.e.-1vlnrr-to-test-for-file-drawer-biases" class="section level3">
 <h3>10. Formal meta-regression model that includes inverse sampling var
 (i.e., 1vlnRR) to test for file-drawer biases</h3>
 <pre class="r"><code>rom1 &lt;- rom1 %&gt;% mutate(inv_lnRR = 1/(ROM_V))
-MLMR2 &lt;-  metafor:: rma.mv(ROM ~ Year..online. + inv_lnRR, V = ROM_V,
+MLMR2 &lt;-  metafor:: rma.mv(ROM ~ Year_c + inv_lnRR, V = ROM_V,
                           method = &quot;REML&quot;,
                           random=list(~1 | Study,
                                       ~1 | Species,
@@ -714,38 +721,157 @@ MLMR2 &lt;-  metafor:: rma.mv(ROM ~ Year..online. + inv_lnRR, V = ROM_V,
                           test = &quot;t&quot;, dfs = &quot;contain&quot;, 
                           data = rom1)</code></pre>
 <pre><code>## Warning: Rows with NAs omitted from model fitting.</code></pre>
+<pre class="r"><code>summary(MLMR2)</code></pre>
+<pre><code>## 
+## Multivariate Meta-Analysis Model (k = 791; method: REML)
+## 
+##     logLik    Deviance         AIC         BIC        AICc   
+## -1742.4016   3484.8031   3496.8031   3524.8201   3496.9107   
+## 
+## Variance Components:
+## 
+##             estim    sqrt  nlvls  fixed    factor 
+## sigma^2.1  0.1696  0.4119     92     no     Study 
+## sigma^2.2  0.2271  0.4765     62     no   Species 
+## sigma^2.3  3.9453  1.9863    791     no  residual 
+## 
+## Test for Residual Heterogeneity:
+## QE(df = 788) = 72594.0625, p-val &lt; .0001
+## 
+## Test of Moderators (coefficients 2:3):
+## F(df1 = 2, df2 = 89) = 5.5763, p-val = 0.0052
+## 
+## Model Results:
+## 
+##           estimate      se     tval   df    pval    ci.lb   ci.ub     
+## intrcpt    -0.1648  0.1247  -1.3218   59  0.1913  -0.4143  0.0847     
+## Year_c      0.1172  0.0395   2.9704   89  0.0038   0.0388  0.1956  ** 
+## inv_lnRR    0.0002  0.0001   1.7348  788  0.0832  -0.0000  0.0004   . 
+## 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <pre class="r"><code>r2_2 &lt;- orchaRd::r2_ml(MLMR2)
 r2_2</code></pre>
 <pre><code>##    R2_marginal R2_conditional 
-##     0.02737936     0.11624653</code></pre>
-<pre class="r"><code># R2_marginal R2_conditional 
-# 0.02737936     0.11624653 
-  # File-drawer and time-lag accounts for 2.7% of variation in lnRR
-  # Have 2 moderators -&gt; Affects the meaning of the intercept</code></pre>
-<ol start="11" style="list-style-type: decimal">
-<li>A written paragraph that discusses the potential for publication
+##     0.02737936     0.11624654</code></pre>
+</div>
+<div id="a-written-paragraph-that-discusses-the-potential-for-publication-bias-based-on-the-meta-regression-results.-what-type-of-publication-bias-if-any-appears-to-be-present-in-the-data-if-publication-bias-is-present-what-does-it-mean-and-what-might-be-contributing-to-such-bias" class="section level3">
+<h3>11. A written paragraph that discusses the potential for publication
 bias based on the meta-regression results. What type of publication
 bias, if any, appears to be present in the data? If publication bias is
 present, what does it mean and what might be contributing to such
-bias?</li>
-</ol>
-<p>We might expect under a file-drawer situation (i.e., where
-researchers stash away poorer quality studies showing opposite effects
-in their desk drawers) that studies with low power (i.e., low precision,
-wide standard errors, and small sample sizes) and non-significant
-correlations will go unpublished. This should be particularly true for
-studies that show the opposite to what we might predict by theory –
-specifically, negative correlations from studies with small sample sizes
-/ low precision that are not significant. This is one factor that can
-drive what we call funnel asymmetry, showing a bunch of missing effect
-sizes in the bottom left corner of the funnel.</p>
-<ol start="12" style="list-style-type: decimal">
-<li>Identify any studies contributing to publication bias. How do your
-updated meta-analysis results compare with a meta-analysis by Clement
-et. al. (2022)? Are there any concerns about these studies? If so,
-describe using references to existing papers what concerns have been
-raised?</li>
-</ol>
+bias?</h3>
+<p>Overall, there is limited presence of publication biases shown in the
+meta-regression results.</p>
+<p>Firstly, Funnel plots helps to expose presence of publication bias
+within the dataset. As seen in figure 2, there are more studies with
+lower precision (1/SE) on the negative end of the lnRR spectrum, while
+the number of higher lnRR values increase as precision increases. This
+display can be indicative of no file-drawer bias present, as we would
+expect studies with low precision to be stashed away, hence would
+observe less studies with negative lnRR with low precision.</p>
+<p>However, pink and grey areas in the graph indicates areas of
+significance, where sampling variance does affect the effect size. With
+no pink area visible, it can be deduced that none of the studies shows
+findings with significant p-values, therefore there is no significant
+correlation between Ocean acidification and Fish behaviour.</p>
+<p>Secondly, time-lag plot shows the evolution of studies’ precision and
+effect size over time. In other words, studies with negative effects
+tends to take longer to publish than positive ones. Figure 3 shows a
+weak positive relationship between lnRR and time through the red LOWESS
+curve, thus weak presence of time-lag bias. Early on, there were many
+studies with small precision and lnRR values. This could indicate many
+low quality data due to large sample error or small sample size. As time
+passes, more low precision studies have moderately increased lnRR
+values. There is also an increased occurrence of higher precision
+studies. With less studies converging away from the red line as time
+passes, we can assume that recent studies have been more closely able to
+describe the relationship with Ocean acidification and fish
+behaviour.</p>
+<p>Similarly, MLMR1 model has the centered year online as a moderator,
+which categorises the variation of effect size depending on the year. In
+this case, “R2_marginal” is 0.022, indicating that the time-lag explains
+2.21% of the variation in lnRR among studies over time. The lack of time
+lag is observed in figure 3 as well, with studies with low lnRR
+decreases over time.</p>
+<p>Lastly, MLMR2 conceptualises the presence of both time-lag and
+file-drawer bias due to moderators being both year online and inverse of
+lnRR variance. The “R2_marginal” for MLMR2 is 0.027, indicating that
+both file-drawer and time-lag accounts for 2.74% of variation in
+lnRR.</p>
+<p>Note that the intercept for MLMR1 and MLMR2 is -0.1131 and -0.1648,
+respectively. MLMR1 intercept shows that the mean effect size is -0.1131
+during the average year. MLMR2 has mean effect size of -0.1648 during
+average year and when inversed lnRR variance is 0. With the difference
+of both models dependent on the presence of inverse lnRR variance, we
+can assume that the differences in the intercepts accounts for the the
+amount of variation explained by the inverse effect size variance, which
+is -0.0517. In other words, when the inversed lnRR variance is 0 (and
+therefore just variance as well), the mean effect size is -0.0517.</p>
+</div>
+<div id="identify-any-studies-contributing-to-publication-bias.-how-do-your-updated-meta-analysis-results-compare-with-a-meta-analysis-by-clement-et.-al.-2022-are-there-any-concerns-about-these-studies-if-so-describe-using-references-to-existing-papers-what-concerns-have-been-raised" class="section level3">
+<h3>12. Identify any studies contributing to publication bias. How do
+your updated meta-analysis results compare with a meta-analysis by
+Clement et. al. (2022)? Are there any concerns about these studies? If
+so, describe using references to existing papers what concerns have been
+raised?</h3>
+<p>Clement et al., explored the presence of decline effect (decreased
+effect size over time) through dissection of multiple biases that may be
+prevalent in Ocean acidification and behavioural studies. Particularly,
+they assessed evidence for publication bias (Strong effect studies tends
+to be more readily published in higher-impact journals), citation bias
+(Those in higher-impact journals tends to be cited more, thus have
+stronger influence), methodological bias (Chosen experimental design or
+sample size inflates the effect size) and investigator effect
+(subsequent papers from same author decreases effect size).</p>
+<p>Figure 1 of their report noted the presence of decline effect. Both a
+and b explained the relationship between lnRR magnitude in accordance to
+year online. The 95% confident LOWESS curve in figure 1a exhibited
+higher lnRR magnitude during the first year, and had a sharp decline
+until 2012. Similarly, 2019 studies in figure 1b exhibited the largest
+95% confidence bounds, displaying a large uncertainty. Thus, they
+confirmed the presence of decline effect.</p>
+<p>Although they hypothesized that the presence of decline effect
+stemmed from the aforementioned biases and effects, they still
+investigated other factors that could inflate effect size. Such factors
+include mechanistic differences of warm and cold water fish species,
+isolation of olfactory cues, and sampling of only larvae. While they
+found no significant effect in the factors, they noted discrepancies in
+the methodology due to no actual background CO2 levels reported.
+However, the lack of signal indicated that the decline effect could be
+present due to the biases.</p>
+<p>Publication and citation bias can be categorised into one group, as
+publication bias tends to fuel citation bias. When assessing the
+proportion of effect size magnitude with journal impact factor and
+Google Scholar citations, they noted that the first 3 studies has much
+higher citation rates than others, including one from 2012. This leads
+to unparallel influences from those studies, thus misleads the general
+public. Those papers are: Munday et al (2009), Dixson et al (2009),
+Munday et al (2010), and Nilsson et al (2012).</p>
+<p>They also assessed the presence of Methodological bias, which was
+done by correlating the mean sample size of studies with the mean effect
+size magnitude. They concluded that studies with high lnRR tends to have
+low sample size (less than 3 fishes). This can have confounding effects
+as low sample size correlates to lower quality since it becomes more
+prone to statistical errors such as Type 1 and Type 2 errors. In the
+supplementary 1 information, these studies are: a2, a3 and a31, and they
+had sample sizes of 45, 18 and 11, respectively. In supplementary 5,
+these studies are Dixon et al (2009), Munday et al (2010), and Munday et
+al (2014).</p>
+<p>The analysis of investigator effect involved removing early studies
+with similar lead investigators. In total, they removed 45% of those
+studies, most of which were studies before 2012, and revealed that the
+decline effect was no longer visible. Thus, they concluded the
+contribution of investigator effect onto decline effect.</p>
+<p>The discrepancy between the updated meta-analyses and the findings
+from Clement et al can relate to the deletion of outliers early on. Due
+to the extremities of some lnRR variance, it involved the deletion of 10
+observations, including Munday et al (2009), Dixson et al (2009), and
+Munday et al (2012). This already lowers the effects of investigator,
+methodological, and both publication and citation bias. As such, we are
+left with low levels of biases, with time-lag explaining 2.21% of
+variation in lnRR across studies, and both file-drawer and time-lag
+explaining 2.74%.</p>
 <p>Reproducibility (30%): 1. Code, analysis and data is setup in a
 public GitHub Repository 2. Workflow, meta-data and file structure is
 clearly documented (using a README file) as is the history of changes
