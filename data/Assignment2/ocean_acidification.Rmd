@@ -1,17 +1,15 @@
 ---
-title: "BIOL3207_Assignment_2"
+title: "Ocean Acidification publication bias project"
 output: html_document
 date: "2022-10-17"
 ---
-
-Link to repository: https://github.com/DeniseTsoi/3207_Assignment2
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## **(1) Statistical Analysis and Interpretation (50%)**
-### 1. Correct analysis of Clark et al. (2020) data (i.e., OA_activitydat_20190302_BIOL3207.csv) to generate the summary statistics (means, SD, N) for each of the fish species’ average activity for each treatment.
+### 1. Analysis of Clark et al. (2020) data (i.e., OA_activitydat_20190302_BIOL3207.csv)
 ```{r}
 library(readr)
 library(tidyverse)
@@ -23,6 +21,7 @@ OA_summary <- OA_data %>% group_by(species, treatment) %>%
                         n = length(unique(animal_id))) %>%
               rename(Species = "species")
 ```
+Preliminary analysis was done by producing a summary statistic for the whole dataset, where the statistics of Mean, Standard deviation and sample size is given for each fish species' average activity after each treatment.
 
 ### 2. Through coding, merge the summary statistics generated from 1) with the metadata (i.e., clark_paper_data.csv) from Clark et al. (2020).
 ```{r}
@@ -208,19 +207,4 @@ They also assessed the presence of Methodological bias, which was done by correl
 The analysis of investigator effect involved removing early studies with similar lead investigators. In total, they removed 45% of those studies, most of which were studies before 2012, and revealed that the decline effect was no longer visible. Thus, they concluded the contribution of investigator effect onto decline effect. 
 
 The discrepancy between the updated meta-analyses and the findings from Clement et al can relate to the deletion of outliers early on. Due to the extremities of some lnRR variance, it involved the deletion of 10 observations, including Munday et al (2009), Dixson et al (2009), and Munday et al (2012). This already lowers the effects of investigator, methodological, and both publication and citation bias. As such, we are left with low levels of biases, with time-lag explaining 2.21% of variation in lnRR across studies, and both file-drawer and time-lag explaining 2.74%. 
-
-
-Reproducibility (30%):
-1. Code, analysis and data is setup in a public GitHub Repository
-2. Workflow, meta-data and file structure is clearly documented (using a README file) as is the history of changes for each file.
-3. Rmarkdown documents follow reproducibility principles:
-  + Rmarkdown document rendered as an html!
-  + Use Figure and Table code chunks that are referenced in text.
-  + Writing of findings is done using inline code chunks with reference to specific object values.
-
-  
-Coding, Writing Structure & Presentation (20%):
-1. Code is clearly annotated, clean, and only what is needed is presented
-2. Figure and Tables have clear and well labelled captions that are informative and correctly referenced within the document.
-3. Sentences are clear and understandable.
 
