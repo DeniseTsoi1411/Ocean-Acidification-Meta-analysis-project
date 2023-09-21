@@ -57,8 +57,11 @@ final <- rbind(ocean_meta, OA_clark2)
 
 ### 4. Calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s escalc() function.
 ```{r}
+## 4a) Load the packages
 library(orchaRd)
 library(metafor)
+
+## 4b) Calculating the ROM values from the 'final' data
 rom <- metafor::escalc(measure = "ROM", 
                         m1i = ctrl.mean,
                         m2i = oa.mean,
@@ -75,14 +78,16 @@ which(rom$ROM_V > 300) # To find unusually large ROM_V values
 which(rom$ROM_V < 0.0001) # To find unusually small ROM_V values
 rom1 <- rom[-c(163, 220, 673, 6, 16, 17, 255, 497, 562, 564),] # Made new variable with deleted outliers
 ```
-orcharRd package = A package that helps with the creation of orchard plots, containing both confidence and prediction intervals around point estimates for different categorical moderators. It also plots effect size distribution with it weighed with either precision (1/Standard error, SE) or sample size.  
+Background notes:
+- orcharRd package = A package that helps with the creation of orchard plots, containing both confidence and prediction intervals around point estimates for different categorical moderators. It also plots effect size distribution with it weighed with either precision (1/Standard error, SE) or sample size.  
 
-metafor package = A comprehensive package used for meta-analysis. This package also helps with the calculation of effect size. When used in conjuction with orchaRd, it cab plot a meta-analytic or meta-regression model. 
+- metafor package = A comprehensive package used for meta-analysis. This package also helps with the calculation of effect size. When used in conjuction with orchaRd, it can plot a meta-analytic or meta-regression model. 
 
-escalc function = Helps with the measure of various effect sizes or outcome measures
+- escalc function = Helps with the measure of various effect sizes or outcome measures. The 'measure = "ROM"' and 'ROM_V' was used to observe the log transformed ratio of the means, such that the changes in behavioural patterns are standardised and made easier to compare.
 
-LnRR = The comparison of the mean effects from the treatment and mean effects from the control group.
-Effect size = 
+- LnRR = The comparison of the mean effects from the treatment and mean effects from the control group.
+
+- Effect size = 
 
 
 Note: Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673. It is possible that the ratio between the mean and standard deviation values are quite disproportionate compared to the other observations, resulting in larger values. 
