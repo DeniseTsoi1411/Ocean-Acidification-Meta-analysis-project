@@ -23,19 +23,21 @@ OA_summary <- OA_data %>% group_by(species, treatment) %>%
 ```
 Preliminary analysis was done by producing a summary statistic for the whole dataset, where the statistics of Mean, Standard deviation and sample size is given for each fish species' average activity after each treatment.
 
-### 2. Through coding, merge the summary statistics generated from 1) with the metadata (i.e., clark_paper_data.csv) from Clark et al. (2020).
+### 2. Merge the summary statistics from above with the metadata provided as 'clark_paper_data.csv' from Clark et al. (2020).
 ```{r}
 OA_clark <- cbind(clark_data, OA_summary)
 OA_clark1 <- pivot_wider(OA_clark, names_from = treatment,
                      names_glue = "{treatment}_{.value}",
                      values_from = c("mean", "sd", "n"))
 ```
+After binding the two datasets together, it was then transformed into a wider format. This was done because the focus was on the changes of fish behaviour depemding on the treatment. Thus, for each treatment, we looked at their respective mean, standard deviation and sample size.
 
-### 3. Through coding, correctly merge the combined summary statistics and metadata from Clark et al. (2020) (output from 1 & 2) into the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
+### 3. Merging the combined dataset with the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
 ```{r}
+## 3a) Reading the meta-analysis dataset
 ocean_meta <- read_csv("./ocean_meta_data.csv")
 
-## Renaming some columns so that they match with ocean_meta
+## 3b) Rename the columns such that it matches with ones from 'ocean_meta'
 OA_clark2 <- OA_clark1 %>% rename("oa.mean" = CO2_mean,
                             "oa.sd" = CO2_sd,
                             "oa.n" = CO2_n,
@@ -43,17 +45,17 @@ OA_clark2 <- OA_clark1 %>% rename("oa.mean" = CO2_mean,
                             "ctrl.sd" = control_sd,
                             "ctrl.n" = control_n)
 
-# Reorder col names based on names in ocean_meta
+## 3c) Reorder the column names based on the ones in 'ocean_meta'
 OA_clark2 <- OA_clark2[names(ocean_meta)]
 
-# Check columns are in same order
+## 3c2) Double check sequence of column names
 colnames(ocean_meta) == colnames(OA_clark2) # Should return all TRUE
 
-# Bind the two dataframes
+## 3d) Bind the two dataframes
 final <- rbind(ocean_meta, OA_clark2)
 ```
 
-### 4. Correctly calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s escalc() function.
+### 4. Calculate the log response ratio (lnRR) effect size for every row of the dataframe using metafor’s escalc() function.
 ```{r}
 library(orchaRd)
 library(metafor)
@@ -73,6 +75,16 @@ which(rom$ROM_V > 300) # To find unusually large ROM_V values
 which(rom$ROM_V < 0.0001) # To find unusually small ROM_V values
 rom1 <- rom[-c(163, 220, 673, 6, 16, 17, 255, 497, 562, 564),] # Made new variable with deleted outliers
 ```
+orcharRd package = A package that helps with the creation of orchard plots, containing both confidence and prediction intervals around point estimates for different categorical moderators. It also plots effect size distribution with it weighed with either precision (1/Standard error, SE) or sample size.  
+
+metafor package = A comprehensive package used for meta-analysis. This package also helps with the calculation of effect size. When used in conjuction with orchaRd, it cab plot a meta-analytic or meta-regression model. 
+
+escalc function = Helps with the measure of various effect sizes or outcome measures
+
+LnRR = The comparison of the mean effects from the treatment and mean effects from the control group.
+Effect size = 
+
+
 Note: Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673. It is possible that the ratio between the mean and standard deviation values are quite disproportionate compared to the other observations, resulting in larger values. 
 
 Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values in e-05. While assessing the relevant columns, it was found that the standard deviation values may be improperly labelled. Both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic to standard deviation because it explains the distance between a certain value with the mean. Thus, the standard deviation column is likely to be mislabeled, and should be representing standard error instead. 
