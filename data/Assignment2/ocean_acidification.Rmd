@@ -111,6 +111,7 @@ MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
                          data = rom1)
 ```
 Background:
+- MLE = A systematic method for parameter estimations, but its variance estimator tends to be biased (It over- or under-estimates the true variance).
 - REML = Restricted Maximum Likelihood = 
 
 
