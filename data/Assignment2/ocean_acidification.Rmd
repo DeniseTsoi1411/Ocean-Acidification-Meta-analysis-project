@@ -71,7 +71,7 @@ rom <- metafor::escalc(measure = "ROM",
                         n2i = oa.n,
                         data = final,
                         var.names = c("ROM", "ROM_V"))
-rom <- mutate(rom, residual = 1:n()) # Added a column for observations / residuals 
+rom <- mutate(rom, residual = 1:n()) # Added a column in 'rom' for observations / residuals 
 
 plot(rom$residual, rom$ROM_V) # Observed outliers in ROM_V, deleted them for further analysis
 which(rom$ROM_V > 300) # To find unusually large ROM_V values
@@ -87,19 +87,20 @@ Background notes:
 
 - LnRR = The comparison of the mean effects from the treatment and mean effects from the control group.
 
-- Effect size = 
+- Effect size = Measures the strength of a relationship between two variables. A low value indicates a small significance between their relationship, while a larger value indicates otherwise.
+
+Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673 (Over 300). It is possible that the ratio between the mean and standard deviation are disproportionate compared to the other observations, resulting in larger values. 
+
+Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values less than e-04. While assessing the relevant columns, it was found that the standard deviations may be improperly labelled. Both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic to standard deviation because a distance of range 0.0001 to 30,000 from the mean is highly unlikely. Thus, the standard deviation column is likely to be mislabeled, and should be represented as standard error instead. 
+
+The outliers are deleted for subsequent analysis.
+
+Some "ROM" and "ROM_V" values are "NA". This occurs when there is negative "oa.mean" values, but positive "ctrl.mean" values. However, they were not deleted from subsequent analysis.
 
 
-Note: Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673. It is possible that the ratio between the mean and standard deviation values are quite disproportionate compared to the other observations, resulting in larger values. 
+### 5. Designing a Meta-analytic model using the log transformed ratios ('ROM' and 'ROM_V')
 
-Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values in e-05. While assessing the relevant columns, it was found that the standard deviation values may be improperly labelled. Both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic to standard deviation because it explains the distance between a certain value with the mean. Thus, the standard deviation column is likely to be mislabeled, and should be representing standard error instead. 
-
-The outliers will be deleted for subsequent analysis.
-
-Lastly, some "ROM" and "ROM_V" values are "NA". This occurs when there is negative "oa.mean" values, but positive "ctrl.mean" values. 
-
-
-### 5. Correct meta-analytic model fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s rma.mv() function.
+fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s rma.mv() function.
 ```{r}
 MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
                          method = "REML",
@@ -109,6 +110,10 @@ MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
                          test = "t", dfs = "contain", 
                          data = rom1)
 ```
+Background:
+- REML = Restricted Maximum Likelihood = 
+
+
 
 ### 6. Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
   + Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
