@@ -99,8 +99,6 @@ Some "ROM" and "ROM_V" values are "NA". This occurs when there is negative "oa.m
 
 
 ### 5. Designing a Meta-analytic model using the log transformed ratios ('ROM' and 'ROM_V')
-
-fitted to the data that controls for the sampling variance of lnRR. The model should include a random effect of study and observation. Use metafor’s rma.mv() function.
 ```{r}
 MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
                          method = "REML",
@@ -112,11 +110,15 @@ MLMA <- metafor:: rma.mv(ROM ~ 1 , V = ROM_V,
 ```
 Background:
 - MLE = A systematic method for parameter estimations, but its variance estimator tends to be biased (It over- or under-estimates the true variance).
-- REML = Restricted Maximum Likelihood = 
+- REML = Restricted Maximum Likelihood = A method for fitting linear mixed models. It can produce unbiased estimates of variance and covariance parameters
+
+The 'MLMA' model is derived by using the REML method to fit the log transformed ratios against its variances. It takes into account the random effects of study and observations, and are fitted to control the sampling variance of lnRR.
 
 
 
-### 6. Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
+### 6. Create plots and further analysis
+
+Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
   + Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
   + Measures of heterogeneity in effect size estimates across studies (i.e., I2 and/or prediction intervals - see predict() function in metafor)
   + Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
