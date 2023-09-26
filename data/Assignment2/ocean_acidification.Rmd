@@ -91,7 +91,7 @@ Background notes:
 
 Upon inspecting the values within "ROM_V", it was clear that there are many extreme outliers. The residuals with extremely high "ROM_V" values are: 163, 220 and 673 (Over 300). It is possible that the ratio between the mean and standard deviation are disproportionate compared to the other observations, resulting in larger values. 
 
-Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values less than e-04. While assessing the relevant columns, it was found that the standard deviations may be improperly labelled. Both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic to standard deviation because a distance of range 0.0001 to 30,000 from the mean is highly unlikely. Thus, the standard deviation column is likely to be mislabeled, and should be represented as standard error instead. 
+Similarly, observations 6, 16, 17, 255, 497, 562 and 564 have "ROM_V" values less than e-04. While assessing the relevant columns, both "ctrl.sd" and "oa.sd" values ranges from 0.0001 to over 30,000. This is not characteristic of standard deviation because a distance of range 0.0001 to 30,000 units from the mean is highly unlikely. Thus, the standard deviation column is likely to be mislabeled, and should be represented as standard error instead. 
 
 The outliers are deleted for subsequent analysis.
 
@@ -114,16 +114,9 @@ Background:
 
 The 'MLMA' model is derived by using the REML method to fit the log transformed ratios against its variances. It takes into account the random effects of study and observations, and are fitted to control the sampling variance of lnRR.
 
-
-
-### 6. Create plots and further analysis
-
-Written paragraph of the findings and what they mean which is supported with a figure. The paragraph should include:
-  + Correct presentation and interpretation of overall meta-analytic mean and measures of uncertainty around the mean estimate (e.g., 95% confidence intervals).
-  + Measures of heterogeneity in effect size estimates across studies (i.e., I2 and/or prediction intervals - see predict() function in metafor)
-  + Forest plot showing the mean estimate, 95% confidence interval, and prediction interval with clearly labelled axes, number of samples and studies plotted on figure
+### 6. Further analysis with plots and statistics
 ```{r}
-summary(MLMA) # To get intercept and 95% Confidence intervals
+summary(MLMA) # To get intercept and 95% confidence intervals
 pi_val <- predict(MLMA) 
 pi_val # To get 95% Prediction interval
 I2_val <-  orchaRd::i2_ml(MLMA) 
@@ -138,19 +131,19 @@ MLMR <-  metafor:: rma.mv(ROM ~ Climate..FishBase., V = ROM_V,
                           test = "t", dfs = "contain", 
                           data = rom1)
 ```
+An intercept in this context reflects the overall estimate of the effect from all experiments published in the literature. In other words, it combines the meta-analytic mean effect sizes across all studies. With an intercept of -0.0629, it infers a weak negative correlation between elevation of CO2 levels and fish behavior across all studies. Therefore, an increase in CO2 levels can reflect a weak relationship with a decrease in changes of fish behaviour.
+
+The resultant 95% confidence and prediction intervals are -0.3127 to 0.1868 and -4.2762 to 4.1503, respectively. While 95% of the time we can be confident the true mean would fall between LnRR values of -0.3127 to 0.1868, we also expect effect sizes to range from -4.2762 to 4.1503 with 95% of repeated experiments. Such a broad prediction interval is indicative of high inconsistency between studies. 
 
 ```{r orchard1, fig.align='center', fig.cap="Figure 1: Orchard plot with Log repsonse ratio (lnRR) as effect size for Ocean acidification and fish behaviour in relations to Climate conditions. k = Effect size, Number of studies in brackets, scaled to precision of each effect size value (1/ROM_V)" }
+
 orchaRd::orchard_plot(MLMR, mod = "Climate..FishBase.", group = "Study", data = rom, xlab = "Log response ratio effect size (lnRR)", angle = 45) +
   annotate(geom = "text", x = 1, y = -10, 
            label = paste0("italic(I)^{2} == ",round(I2_val[1], 2)), 
            color = "black", parse = TRUE, size = 5) + 
   annotate(geom = "text", x = 0.95, y = -7, label = "%", color = "black", parse = FALSE, size = 5) 
 ```
-The intercept was found to be -0.0629. This reflects the overall estimate of the effect from all experiments published in the literature. In other words, it combines the meta-analytic mean effect sizes across all studies. Thus, the intercept infers that there is a weak negative correlation between elevation of CO2 levels and fish behavior across all studies. 
-
-The resultant 95% confidence and prediction intervals are -0.3127 to 0.1868 and -4.2762 to 4.1503, respectively. While 95% of the time we can be confident the true mean would fall between LnRR values of -0.3127 to 0.1868, we also expect effect sizes to range from -4.2762 to 4.1503 with 95% of repeated experiments. Such a broad prediction interval is indicative of high inconsistency between studies. 
-
-Aside from prediction intervals, we can also deduce levels of heterogeneity through I2. I2 represents the allocation of variation from within and across studies into "Total" and the aforementioned random effects. Evidently, we observe complete heterogeneous effect size because sampling variance contributes 0.1% (100% - I(total)^2) of total variation in effect size. Likewise, we observe 5.69% of total effect size variation due to differences in studies, 5.08% due to differences in species, and 89.11% due to residual effects. 
+Aside from prediction intervals, we can also deduce levels of heterogeneity through I^2. I^2 represents the allocation of variation from within and across studies into "Total" and the aforementioned random effects. Evidently, we observe complete heterogeneous effect size because sampling variance contributes 0.1% (100% - I(total)^2) of total variation in effect size. Likewise, we observe 5.69% of total effect size variation due to differences in studies, 5.08% due to differences in species, and 89.11% due to residual effects. 
 
 The MLMR model and Orchard plot relates the effect sizes with the climate, evaluating whether lnRR value changes depending on the climate conditions. Thus, the intercept of MLMR explains the relationship between CO2 levels and fish behavior in correspondence with climate. As indicated on the Orchard plot as well, we observe majority of points with very low precision, with 95% confidence interval intersecting x=0 (Thick black line), suggesting no effect. The 95% prediction interval (Thin black line) reflects the high heterogeneity (99.89%), with "k" showing the effect size and values in bracket shows sample size for that climate group.
 
@@ -170,6 +163,7 @@ ggplot(rom1, aes(y = ROM, x = Year..online., size = 1/ROM_V)) + geom_point(alpha
     y = "Log response ratio (lnRR)", size = "Precision (1/SE)") +
     theme_classic()
 ```
+Generally, effect size explains how meaningful a relationship is between variables. In this case, where there are increasingly more publications about Ocean acidification, we can assess the changes in effect size over the years, and the extent in which these values are trustworthy.
 
 ### 9. Formal meta-regression model that includes year as a moderator (fixed effect) to test for time-lag bias
 ```{r}
@@ -201,15 +195,15 @@ r2_2 <- orchaRd::r2_ml(MLMR2)
 r2_2
 ```
 
-### 11. A written paragraph that discusses the potential for publication bias based on the meta-regression results. What type of publication bias, if any, appears to be present in the data? If publication bias is present, what does it mean and what might be contributing to such bias?
+### 11. Analysing presence of publication bias based on meta-regression results (Type of publication bias, how does it change the analysis, what may be contributing to the bias)
 
-Overall, there is limited presence of publication biases shown in the meta-regression results. 
+Overall, there is limited presence of publication bias shown in the meta-regression results. 
 
-Firstly, Funnel plots helps to expose presence of publication bias within the dataset. As seen in figure 2, there are more studies with lower precision (1/SE) on the negative end of the lnRR spectrum, while the number of higher lnRR values increase as precision increases. This display can be indicative of no file-drawer bias present, as we would expect studies with low precision to be stashed away, hence would observe less studies with negative lnRR with low precision. 
+Firstly, Funnel plots helps to expose presence of publication bias within the dataset. As seen in figure 2, there are more studies with lower precision (1/SE) on the negative end of the lnRR spectrum, while the number of higher lnRR values increase as precision increases. This display is indicative of an absence of file-drawer bias, as we would expect studies with low precision to be 'stashed away', hence would observe less studies with negative lnRR with low precision. 
 
-However, pink and grey areas in the graph indicates areas of significance, where sampling variance does affect the effect size. With no pink area visible, it can be deduced that none of the studies shows findings with significant p-values, therefore there is no significant correlation between Ocean acidification and Fish behaviour.
+However, the pink and grey areas in the graph indicates areas of significance, where sampling variance does affect the effect size. With no pink area visible, it is deduced that none of the studies shows findings with significant p-values, therefore, no significant correlation between Ocean acidification and Fish behaviour.
 
-Secondly, time-lag plot shows the evolution of studies' precision and effect size over time. In other words, studies with negative effects tends to take longer to publish than positive ones. Figure 3 shows a weak positive relationship between lnRR and time through the red LOWESS curve, thus weak presence of time-lag bias. Early on, there were many studies with small precision and lnRR values. This could indicate many low quality data due to large sample error or small sample size. As time passes, more low precision studies have moderately increased lnRR values. There is also an increased occurrence of higher precision studies. With less studies converging away from the red line as time passes, we can assume that recent studies have been more closely able to describe the relationship with Ocean acidification and fish behaviour.
+Secondly, the time-lag plot shows the evolution of studies' precision and effect size over time. In other words, studies with negative effects tends to take longer to publish than positive ones. Figure 3 shows a weak positive relationship between lnRR and time through the red LOWESS curve, thus weak presence of time-lag bias. Early on, there were many studies with small precision and lnRR values. This could indicate many low quality data due to large sample error or small sample size. As time passes, more low precision studies have moderately increased lnRR values. There is also an increased occurrence of higher precision studies. With less studies converging away from the red line as time passes, we can assume that recent studies have been more closely able to describe the relationship with Ocean acidification and fish behaviour.
 
 Similarly, MLMR1 model has the centered year online as a moderator, which categorises the variation of effect size depending on the year. In this case, "R2_marginal" is 0.022, indicating that the time-lag explains 2.21% of the variation in lnRR among studies over time. The lack of time lag is observed in figure 3 as well, with studies with low lnRR decreases over time. 
 
