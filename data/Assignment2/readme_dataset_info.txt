@@ -24,7 +24,7 @@ columnHeading		description
 -------------		-----------	
 loc			Location, and year, where the data were collected. AIMS = Australian Institute of Marine Science; LIRS = Lizard Island Research Station
 species			Species name: Acantho = Acanthochromis; Ambon = Pomacentrus amboinensis; Chromis = Chromis atripectoralis; Humbug = Dascyllus aruanus; Lemon = Pomacentrus moluccensis	
-treatment		Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups
+treatment		Elevated CO2 [CO2] (850-1,050 Âµatm) or control [Control] (400 - 450 Âµatm) groups
 animal_id		Fish identity
 SL			Standard length of the fish in mm
 size			Size grouping of the fish, separated at 15 mm standard length into 'big' or 'small'
@@ -41,7 +41,7 @@ columnHeading		description
 -------------		-----------	
 loc			Location, and year, where the data were collected. AIMS = Australian Institute of Marine Science; LIRS = Lizard Island Research Station
 species			Species name: acantho = Acanthochromis; Ambon = Pomacentrus amboinensis; Chromis = Chromis atripectoralis; Humbug = Dascyllus aruanus; Lemon = Pomacentrus moluccensis	
-treatment		Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups
+treatment		Elevated CO2 [CO2] (850-1,050 Âµatm) or control [Control] (400 - 450 Âµatm) groups
 animal_id		Fish identity
 sl			Standard length of the fish in mm
 size			Size grouping of the fish, separated at 15 mm standard length into 'big' or 'small'
@@ -56,10 +56,10 @@ comment			Comment with notes on the origin of the data
 			
 columnHeading		description	
 -------------		-----------	
-treatment		"Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups"	
+treatment		"Elevated CO2 [CO2] (850-1,050 Âµatm) or control [Control] (400 - 450 Âµatm) groups"	
 species			Species name: Acanthochromis = Acanthochromis; Ambon = Pomacentrus amboinensis; Chromis = Chromis atripectoralis; Humbug = Dascyllus aruanus; Lemon = Pomacentrus moluccensis
 fishID			Fish identity
-daysExposed		"Numbers of days in elevated CO2 conditions (850-1,050 µatm)"	
+daysExposed		"Numbers of days in elevated CO2 conditions (850-1,050 Âµatm)"	
 daysUntilExp		Numbers of days in experimental conditions (Control or CO2)	
 tank			Tank number
 tankFishIdentifier	Unique fish identifier		
@@ -80,7 +80,7 @@ score			Did the fish turn right [1] or left [0] in the trial (i.e. row)?
 			
 columnHeading		description	
 -------------		-----------	
-treatment		"Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups"	
+treatment		"Elevated CO2 [CO2] (850-1,050 Âµatm) or control [Control] (400 - 450 Âµatm) groups"	
 population		"Collected in the wild [Wild] or aquarium reared at Reef HQ in Cairns, QLD [RHQ]"	
 fishID			Fish identity
 experimenter		Name of experimenter	
