@@ -8,12 +8,12 @@ date: "2022-10-17"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## **(1) Statistical Analysis and Interpretation (50%)**
+## **(1) Statistical Analysis and Interpretation**
 ### 1. Analysis of Clark et al. (2020) data (i.e., OA_activitydat_20190302_BIOL3207.csv)
 ```{r}
 library(readr)
 library(tidyverse)
-OA_data <- read_csv("./OA_activitydat_20190302_BIOL3207.csv")
+OA_data <- read_csv("./OA_activitydat_20190302.csv")
 clark_data <- read_csv("./clark_paper_data.csv")
 OA_summary <- OA_data %>% group_by(species, treatment) %>%
               summarise(mean = mean(activity, na.rm = TRUE),
@@ -29,8 +29,9 @@ OA_clark <- cbind(clark_data, OA_summary)
 OA_clark1 <- pivot_wider(OA_clark, names_from = treatment,
                      names_glue = "{treatment}_{.value}",
                      values_from = c("mean", "sd", "n"))
+# Using a 'wider' format to assist with further analysis (such as plotting with ggplot)
 ```
-After binding the two datasets together, it was then transformed into a wider format. This was done because the focus was on the changes of fish behaviour depemding on the treatment. Thus, for each treatment, we looked at their respective mean, standard deviation and sample size.
+After binding the two datasets together, it was then transformed into a wider format. This was done because the focus was on the changes of fish behaviour depending on the treatment. Thus, for each treatment, we looked at their respective mean, standard deviation and sample size.
 
 ### 3. Merging the combined dataset with the larger meta-analysis dataset (i.e., ocean_meta_data.csv).
 ```{r}
